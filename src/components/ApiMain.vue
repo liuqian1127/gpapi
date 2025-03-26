@@ -1,7 +1,8 @@
 <script setup>
 import {ref} from "vue"
-import {Right} from "@element-plus/icons-vue"
 import {invoke} from "@tauri-apps/api/core"
+
+import {Right} from "@element-plus/icons-vue"
 import {ElMessage} from "element-plus";
 
 const loading = ref(false)

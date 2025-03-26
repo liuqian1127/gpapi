@@ -101,9 +101,9 @@ async fn parse_response(
     response: Result<reqwest::Response, reqwest::Error>,
 ) -> Result<String, String> {
     match response {
-        Ok(o) => Ok(o.text().await.unwrap()),
-        Err(e) => {
-            if e.is_connect() {
+        Ok(resp) => Ok(resp.text().await.unwrap()),
+        Err(err) => {
+            if err.is_connect() {
                 Err("网络不通".into())
             } else {
                 Err("其他异常".into())
@@ -130,13 +130,13 @@ fn parse_header(header: &str) -> reqwest::header::HeaderMap {
 }
 
 #[cfg(test)]
-mod api_tests {
-    use crate::api::parse_header;
+mod http_tests {
+    use crate::http;
 
     #[test]
     fn parse_header_test() {
         let header = "Content-Type: application/json;charset=UTF-8\nAccept: application/json, text/plain, */*\n";
-        let header_map = parse_header(header);
+        let header_map = http::parse_header(header);
         assert_eq!(header_map.len(), 2);
         assert_eq!(
             header_map.get("Content-Type").unwrap(),
@@ -146,5 +146,20 @@ mod api_tests {
             header_map.get("Accept").unwrap(),
             "application/json,text/plain,*/*"
         );
+    }
+
+    #[tokio::test]
+    async fn get_test() {
+        let url = "https://tauri.app";
+        let header = "Content-Type: application/json;charset=UTF-8\nAccept: application/json, text/plain, */*\n";
+        let resp = http::get(url, header).await;
+        match resp {
+            Ok(output) => {
+                println!("{output}");
+            }
+            Err(err) => {
+                println!("{err}");
+            }
+        }
     }
 }
