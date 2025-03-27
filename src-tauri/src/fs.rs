@@ -134,11 +134,8 @@ fn create(path: &str) -> Result<File, String> {
 /// 递归列举[`path`]文件树
 fn ls(path: &path::Path) -> io::Result<TreeNode> {
     let mut node = TreeNode {
-        label: path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string(),
+        // file_stem 不带扩展名
+        label: path.file_stem().unwrap().to_string_lossy().to_string(),
         children: Vec::new(),
         is_dir: path.is_dir(),
         path: path.to_string_lossy().to_string(),

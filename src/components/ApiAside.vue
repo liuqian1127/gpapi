@@ -3,13 +3,19 @@ import {onMounted, ref} from "vue"
 import {invoke} from "@tauri-apps/api/core"
 import {ElMessage} from "element-plus"
 import {Refresh} from "@element-plus/icons-vue"
+import {useTabStore} from "@/store/tab.js"
+import {storeToRefs} from "pinia"
 
-// 根目录 todo 待改为读写配置文件
+// 根目录
 const rootPath = ref("")
 // 文件树数据
 const treeData = ref([])
 // 加载文件树控件
 const loading = ref(false)
+
+const tabStore = useTabStore()
+const {currentTab} = storeToRefs(tabStore)
+const {addTab} = tabStore
 
 // 读取配置
 onMounted(() => {
@@ -41,7 +47,17 @@ const handleClear = () => treeData.value = []
 
 // 点击文件树节点
 const handleNodeClick = data => {
-  console.log(data)
+  if (data.isDir) {
+    return
+  }
+
+  const tab = {
+    name: data.path,
+    label: data.label
+  }
+  addTab(tab)
+
+  currentTab.value = data.path
 }
 
 // 文件树右键菜单
@@ -53,13 +69,13 @@ const handleNodeContextMenu = (event, data) => {
 
 <template>
   <div class="aside-container">
-    <el-input v-model="rootPath" placeholder="请输入工作目录" clearable @clear="handleClear">
+    <el-input v-model="rootPath" clearable placeholder="请输入工作目录" @clear="handleClear">
       <template #append>
-        <el-button :icon="Refresh" :disabled="rootPath===''" :loading="loading" @click="handleLoad"/>
+        <el-button :disabled="rootPath===''" :icon="Refresh" :loading="loading" @click="handleLoad"/>
       </template>
     </el-input>
 
-    <el-tree :data="treeData" highlight-current empty-text="无数据" @node-click="handleNodeClick" @node-contextmenu="handleNodeContextMenu"/>
+    <el-tree :data="treeData" empty-text="无数据" highlight-current @node-click="handleNodeClick" @node-contextmenu="handleNodeContextMenu"/>
   </div>
 </template>
 

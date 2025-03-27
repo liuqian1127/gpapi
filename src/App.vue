@@ -6,10 +6,20 @@ import ApiMain from "@/components/ApiMain.vue"
 <template>
   <el-container>
     <el-aside style="border: 1px solid #cfcfc4">
-      <api-aside></api-aside>
+      <api-aside/>
     </el-aside>
     <el-main>
-      <api-main></api-main>
+      <api-main/>
     </el-main>
   </el-container>
 </template>
+
+<style scoped>
+.el-container {
+  height: 100%;
+}
+
+.el-main {
+  --el-main-padding: 10px
+}
+</style>
