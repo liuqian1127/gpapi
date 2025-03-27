@@ -55,11 +55,11 @@ async function sendRequest() {
     <el-row :gutter="20" style="margin-top:20px">
       <el-col :span="12">
         <el-text type="primary">请求头：</el-text>
-        <el-input v-model="header" resize="none" rows="10" type="textarea"/>
+        <el-input v-model="header" resize="none" :rows="10" type="textarea"/>
       </el-col>
       <el-col :span="12">
         <el-text type="primary">请求体：</el-text>
-        <el-input v-model="input" :disabled="method==='GET'||method==='DELETE'" resize="none" rows="10" type="textarea"/>
+        <el-input v-model="input" :disabled="method==='GET'||method==='DELETE'" resize="none" :rows="10" type="textarea"/>
       </el-col>
     </el-row>
     <el-row style="margin-top:20px">
@@ -69,7 +69,7 @@ async function sendRequest() {
     </el-row>
     <el-row>
       <el-col :span="24">
-        <el-input v-model="output" readonly resize="none" rows="30" type="textarea"/>
+        <el-input v-model="output" readonly resize="none" :rows="30" type="textarea"/>
       </el-col>
     </el-row>
   </div>

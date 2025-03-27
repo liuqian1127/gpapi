@@ -1,7 +1,7 @@
 mod fs;
 mod http;
 
-use fs::ls;
+use fs::{read, read_setting, tree, write};
 use http::do_request;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -10,7 +10,13 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![do_request, ls])
+        .invoke_handler(tauri::generate_handler![
+            do_request,
+            tree,
+            read_setting,
+            read,
+            write
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

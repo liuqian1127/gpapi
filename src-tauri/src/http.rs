@@ -130,7 +130,7 @@ fn parse_header(header: &str) -> reqwest::header::HeaderMap {
 }
 
 #[cfg(test)]
-mod http_tests {
+mod tests {
     use crate::http;
 
     #[test]
