@@ -24,12 +24,16 @@ onMounted(() => {
 
 // 加载文件树
 const handleLoad = () => {
-  if (rootPath.value === "") {
+  const path = rootPath.value + ""
+  if (path === "") {
     ElMessage.error("请输入工作目录")
     return
   }
 
   loading.value = true
+
+  // 防止盘符小写
+  rootPath.value = path.slice(0, 1).toUpperCase() + path.slice(1)
   const args = {path: rootPath.value}
   invoke("tree", args)
       .then(resp => {
