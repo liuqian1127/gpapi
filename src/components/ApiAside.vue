@@ -3,8 +3,7 @@ import {onMounted, ref} from "vue"
 import {invoke} from "@tauri-apps/api/core"
 import {ElMessage} from "element-plus"
 import {Refresh} from "@element-plus/icons-vue"
-import {useTabStore} from "@/store/tab.js"
-import {storeToRefs} from "pinia"
+import ApiAsideTree from "@/components/ApiAsideTree.vue";
 
 // 根目录
 const rootPath = ref("")
@@ -12,10 +11,6 @@ const rootPath = ref("")
 const treeData = ref([])
 // 加载文件树控件
 const loading = ref(false)
-
-const tabStore = useTabStore()
-const {currentTab} = storeToRefs(tabStore)
-const {addTab} = tabStore
 
 // 读取配置
 onMounted(() => {
@@ -42,29 +37,8 @@ const handleLoad = () => {
       .finally(() => loading.value = false)
 }
 
-// 清空树
+// 清空文件树
 const handleClear = () => treeData.value = []
-
-// 点击文件树节点
-const handleNodeClick = data => {
-  if (data.isDir) {
-    return
-  }
-
-  const tab = {
-    name: data.path,
-    label: data.label
-  }
-  addTab(tab)
-
-  currentTab.value = data.path
-}
-
-// 文件树右键菜单
-const handleNodeContextMenu = (event, data) => {
-  console.log(event)
-  console.log(data)
-}
 </script>
 
 <template>
@@ -75,7 +49,7 @@ const handleNodeContextMenu = (event, data) => {
       </template>
     </el-input>
 
-    <el-tree :data="treeData" empty-text="无数据" highlight-current @node-click="handleNodeClick" @node-contextmenu="handleNodeContextMenu"/>
+    <api-aside-tree :data="treeData"/>
   </div>
 </template>
 
