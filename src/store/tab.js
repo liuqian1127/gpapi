@@ -4,7 +4,7 @@ import {ref} from "vue"
 // 右侧主界面Tab标签页状态
 export const useTabStore = defineStore('Tab', () => {
     const tabs = ref([])
-    const currentTab = ref('')
+    const activeTab = ref('')
 
     function addTab(tab) {
         const find = tabs.value.find(obj => obj.label === tab.label)
@@ -15,7 +15,7 @@ export const useTabStore = defineStore('Tab', () => {
 
     function removeTab(name) {
         const arr = tabs.value
-        let activeName = currentTab.value
+        let activeName = activeTab.value
         if (activeName === name) {
             arr.forEach((tab, index) => {
                 if (tab.name === name) {
@@ -27,9 +27,20 @@ export const useTabStore = defineStore('Tab', () => {
             })
         }
 
-        currentTab.value = activeName
+        activeTab.value = activeName
         tabs.value = arr.filter(tab => tab.name !== name)
     }
 
-    return {tabs, currentTab, addTab, removeTab}
+    function renameTab(oldLabel, newLabel) {
+        for (const tab of tabs.value) {
+            if (tab.label === oldLabel) {
+                tab.label = newLabel
+                tab.name = tab.name.replaceAll(oldLabel, newLabel)
+                activeTab.value = tab.name
+                break
+            }
+        }
+    }
+
+    return {tabs, activeTab, addTab, removeTab, renameTab}
 })

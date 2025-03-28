@@ -49,7 +49,7 @@ const handleClear = () => treeData.value = []
       </template>
     </el-input>
 
-    <api-aside-tree :data="treeData"/>
+    <api-aside-tree :root-path="rootPath" :tree-data="treeData" @refresh="handleLoad"/>
   </div>
 </template>
 

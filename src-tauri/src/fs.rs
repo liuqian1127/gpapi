@@ -39,6 +39,33 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
     }
 }
 
+/// 递归列举[`path`]文件树
+fn ls(path: &path::Path) -> Result<TreeNode, io::Error> {
+    let mut node = TreeNode {
+        // file_stem 不带扩展名
+        label: path
+            .file_stem()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default()
+            .to_string(),
+        children: Vec::new(),
+        is_dir: path.is_dir(),
+        path: path.to_str().unwrap_or_default().to_string(),
+    };
+
+    if path.is_dir() {
+        for entry in fs::read_dir(path)? {
+            let entry = entry?;
+            let child_path = entry.path();
+            let child_node = ls(&child_path)?;
+            node.children.push(child_node);
+        }
+    }
+
+    Ok(node)
+}
+
 /// 读取配置
 #[tauri::command]
 pub fn read_setting() -> Result<Setting, String> {
@@ -55,6 +82,22 @@ pub fn read_setting() -> Result<Setting, String> {
     }
 }
 
+/// 写入配置
+fn write_setting(setting: Setting) -> Result<String, String> {
+    let file = create(SETTING_FILEPATH);
+    let file = match file {
+        Ok(f) => f,
+        Err(e) => return Err(e),
+    };
+
+    let result = serde_json::to_writer(file, &setting);
+
+    match result {
+        Ok(()) => Ok("保存成功".to_string()),
+        Err(e) => Err(format!("保存失败 [{e}]")),
+    }
+}
+
 /// 覆盖写文件，将[`content`]写入[`path`]文件
 #[tauri::command]
 pub fn write(path: &str, content: &str) -> Result<String, String> {
@@ -65,7 +108,7 @@ pub fn write(path: &str, content: &str) -> Result<String, String> {
 
     let result = fs::write(path, content);
     match result {
-        Ok(()) => Ok("写入成功".into()),
+        Ok(()) => Ok("写入成功".to_string()),
         Err(e) => Err(format!("写入失败 {e}")),
     }
 }
@@ -81,32 +124,68 @@ pub fn read(path: &str) -> Result<String, String> {
     }
 }
 
-/// 写入配置
-fn write_setting(setting: Setting) -> Result<String, String> {
-    let file = create(SETTING_FILEPATH);
-    let file = match file {
-        Ok(f) => f,
-        Err(e) => return Err(e),
-    };
+/// 删除[`path`]文件
+#[tauri::command]
+pub fn remove(path: &str) -> Result<String, String> {
+    let p = path::Path::new(path);
 
-    let result = serde_json::to_writer(file, &setting);
+    let result;
+    if p.is_dir() {
+        result = fs::remove_dir_all(path);
+    } else {
+        result = fs::remove_file(path);
+    }
 
     match result {
-        Ok(()) => Ok("保存成功".into()),
-        Err(e) => Err(format!("保存失败 [{e}]")),
+        Ok(()) => Ok("删除成功".to_string()),
+        Err(e) => Err(format!("删除文件失败 {e}")),
+    }
+}
+
+/// 重命名，绝对路径
+#[tauri::command]
+pub fn rename(from: &str, to: &str) -> Result<String, String> {
+    let p = path::Path::new(to);
+    if p.exists() {
+        return Ok("exist".to_string());
+    }
+
+    let result = fs::rename(from, to);
+
+    match result {
+        Ok(()) => Ok("重命名成功".to_string()),
+        Err(e) => Err(format!("重命名失败 {e}")),
     }
 }
 
 /// 创建[`path`]目录
-fn mkdir(path: &str) -> Result<String, String> {
+#[tauri::command]
+pub fn mkdir(path: &str) -> Result<String, String> {
     let p = path::Path::new(path);
-    if !p.exists() {
+    if p.exists() {
+        Ok("exist".to_string())
+    } else {
         if let Err(e) = fs::create_dir_all(path) {
-            return Err(format!("创建目录失败 {e}"));
+            Err(format!("创建目录失败 {e}"))
+        } else {
+            Ok("创建目录成功".to_string())
         }
     }
+}
 
-    Ok(format!("{} 创建成功", path))
+/// 创建[`path`]文件
+#[tauri::command]
+pub fn touch(path: &str) -> Result<String, String> {
+    let p = path::Path::new(path);
+    if p.exists() {
+        Ok("exist".to_string())
+    } else {
+        let file = create(path);
+        match file {
+            Ok(_) => Ok("创建文件成功".to_string()),
+            Err(e) => Err(format!("创建文件失败 {e}")),
+        }
+    }
 }
 
 /// 创建[`path`]文件
@@ -126,28 +205,6 @@ fn create(path: &str) -> Result<fs::File, String> {
         Ok(f) => Ok(f),
         Err(e) => Err(format!("创建文件失败 {e}")),
     }
-}
-
-/// 递归列举[`path`]文件树
-fn ls(path: &path::Path) -> Result<TreeNode, io::Error> {
-    let mut node = TreeNode {
-        // file_stem 不带扩展名
-        label: path.file_stem().unwrap_or_default().to_str().unwrap_or_default().to_string(),
-        children: Vec::new(),
-        is_dir: path.is_dir(),
-        path: path.to_str().unwrap_or_default().to_string(),
-    };
-
-    if path.is_dir() {
-        for entry in fs::read_dir(path)? {
-            let entry = entry?;
-            let child_path = entry.path();
-            let child_node = ls(&child_path)?;
-            node.children.push(child_node);
-        }
-    }
-
-    Ok(node)
 }
 
 /// 设置文件路径
