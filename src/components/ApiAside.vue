@@ -32,7 +32,10 @@ const handleLoad = () => {
   loading.value = true
   const args = {path: rootPath.value}
   invoke("tree", args)
-      .then(resp => treeData.value = resp.children)
+      .then(resp => {
+        resp.children[0].isRoot = true
+        treeData.value = resp.children
+      })
       .catch(err => ElMessage.error(err))
       .finally(() => loading.value = false)
 }

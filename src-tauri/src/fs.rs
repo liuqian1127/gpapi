@@ -4,9 +4,9 @@ use std::{fs, io, path};
 #[serde(rename_all = "camelCase")]
 pub struct TreeNode {
     label: String,
+    path: String,
     children: Vec<TreeNode>,
     is_dir: bool,
-    path: String,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -33,7 +33,13 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
                 return Err(e);
             }
 
-            Ok(n)
+            let root_node = TreeNode {
+                label: "root".to_string(),
+                path: path.to_string(),
+                children: vec![n],
+                is_dir: true,
+            };
+            Ok(root_node)
         }
         Err(e) => Err(format!("获取失败 [{e}]")),
     }
@@ -49,9 +55,9 @@ fn ls(path: &path::Path) -> Result<TreeNode, io::Error> {
             .to_str()
             .unwrap_or_default()
             .to_string(),
+        path: path.to_str().unwrap_or_default().to_string(),
         children: Vec::new(),
         is_dir: path.is_dir(),
-        path: path.to_str().unwrap_or_default().to_string(),
     };
 
     if path.is_dir() {

@@ -7,7 +7,7 @@ export const useTabStore = defineStore('Tab', () => {
     const activeTab = ref('')
 
     function addTab(tab) {
-        const find = tabs.value.find(obj => obj.label === tab.label)
+        const find = tabs.value.find(obj => obj.name === tab.name)
         if (!find) {
             tabs.value.push(tab)
         }

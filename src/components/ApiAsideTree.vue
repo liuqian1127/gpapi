@@ -4,7 +4,6 @@ import {storeToRefs} from "pinia"
 import {onBeforeUnmount, onMounted, ref} from "vue"
 import {invoke} from "@tauri-apps/api/core";
 import {ElMessage} from "element-plus";
-import {Plus} from "@element-plus/icons-vue";
 
 const {rootPath, treeData} = defineProps(["rootPath", "treeData"])
 const emit = defineEmits(["refresh"])
@@ -14,10 +13,8 @@ const menuPosition = ref({top: 0, left: 0})
 const activeNode = ref()
 
 const tree = ref()
-const loading = ref(false)
 
 const newName = ref("")
-const rootName = ref("")
 const dialogFormVisible = ref(false)
 
 const tabStore = useTabStore()
@@ -51,16 +48,6 @@ const handleContextMenu = (event, data) => {
 // 关闭菜单
 const closeMenu = () => showMenu.value = false
 
-// 添加初始目录
-const addRootDir = () => {
-  const path = rootPath + "/" + rootName.value
-
-  // 新建目录
-  invoke("mkdir", {path})
-      .then(_ => emit("refresh"))
-      .catch(err => ElMessage.error(err))
-}
-
 // 新增目录
 const addDir = () => {
   closeMenu()
@@ -79,7 +66,10 @@ const addDir = () => {
         if (resp === "exist") {
           ElMessage.success("目录已存在")
         } else {
-          tree.value.append(node, activeNode.value)
+          if (!activeNode.value.children) {
+            activeNode.value.children = []
+          }
+          activeNode.value.children.push(node)
         }
       })
       .catch(err => ElMessage.error(err))
@@ -103,7 +93,10 @@ const addFile = () => {
         if (resp === "exist") {
           ElMessage.success("文件已存在")
         } else {
-          tree.value.append(node, activeNode.value)
+          if (!activeNode.value.children) {
+            activeNode.value.children = []
+          }
+          activeNode.value.children.push(node)
         }
       })
       .catch(err => ElMessage.error(err))
@@ -174,16 +167,9 @@ onBeforeUnmount(() => removeEventListener('click', closeMenu))
 </script>
 
 <template>
-  <el-tree ref="tree" :data="treeData" empty-text="无数据" highlight-current node-key="path" @node-click="handleNodeClick" @node-contextmenu="handleContextMenu">
+  <el-tree ref="tree" :data="treeData" empty-text="无数据" node-key="path" highlight-current @node-click="handleNodeClick" @node-contextmenu="handleContextMenu">
     <template #default="{node, data}">
       <el-text :type="data.isDir?'primary':'success'">{{ node.label }}</el-text>
-    </template>
-    <template #empty>
-      <el-input v-model="rootName" clearable placeholder="请输入初始目录">
-        <template #append>
-          <el-button :disabled="rootPath===''||rootName===''" :icon="Plus" :loading="loading" @click="addRootDir"/>
-        </template>
-      </el-input>
     </template>
   </el-tree>
 
@@ -191,8 +177,8 @@ onBeforeUnmount(() => removeEventListener('click', closeMenu))
     <el-menu>
       <el-menu-item index="1" v-if="activeNode.isDir" @click="addDir">新增目录</el-menu-item>
       <el-menu-item index="2" v-if="activeNode.isDir" @click="addFile">新增文件</el-menu-item>
-      <el-menu-item index="3" v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" @click="remove">删除</el-menu-item>
-      <el-menu-item index="4" v-if="activeNode.children.length===0" @click="showRenameDialog">重命名</el-menu-item>
+      <el-menu-item index="3" v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" :disabled="activeNode.isRoot" @click="remove">删除</el-menu-item>
+      <el-menu-item index="4" v-if="activeNode.children.length===0" :disabled="activeNode.isRoot" @click="showRenameDialog">重命名</el-menu-item>
     </el-menu>
   </div>
 
