@@ -69,16 +69,32 @@ fn ls(path: &path::Path) -> Result<TreeNode, io::Error> {
 /// 读取配置
 #[tauri::command]
 pub fn read_setting() -> Result<Setting, String> {
-    let file = fs::File::open(SETTING_FILEPATH);
-    let file = match file {
-        Ok(f) => f,
-        Err(e) => return Err(format!("读文件失败 [{e}]")),
-    };
+    let p = path::Path::new(SETTING_FILEPATH);
+    if !p.exists() {
+        // 初始化配置文件
+        let result = create(SETTING_FILEPATH);
+        match result {
+            Ok(_) => {
+                let setting = Setting {
+                    root_path: "".to_string(),
+                };
+                Ok(setting)
+            }
+            Err(e) => Err(format!("初始化配置文件失败 [{e}]")),
+        }
+    } else {
+        // 读取配置文件
+        let file = fs::File::open(SETTING_FILEPATH);
+        let file = match file {
+            Ok(f) => f,
+            Err(e) => return Err(format!("读文件失败 [{e}]")),
+        };
 
-    let result = serde_json::from_reader(file);
-    match result {
-        Ok(data) => Ok(data),
-        Err(e) => Err(format!("读取配置失败 [{e}]")),
+        let result = serde_json::from_reader(file);
+        match result {
+            Ok(data) => Ok(data),
+            Err(e) => Err(format!("读取配置失败 [{e}]")),
+        }
     }
 }
 
@@ -208,7 +224,7 @@ fn create(path: &str) -> Result<fs::File, String> {
 }
 
 /// 设置文件路径
-const SETTING_FILEPATH: &str = "../conf/settings.json";
+const SETTING_FILEPATH: &str = "conf/settings.json";
 
 #[cfg(test)]
 mod tests {
