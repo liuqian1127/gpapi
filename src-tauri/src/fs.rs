@@ -1,5 +1,8 @@
 use std::{fs, io, path};
 
+/// 设置文件路径
+const SETTING_FILEPATH: &str = "conf/settings.json";
+
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TreeNode {
@@ -18,9 +21,11 @@ pub struct Setting {
 /// 列举文件树
 #[tauri::command]
 pub fn tree(path: &str) -> Result<TreeNode, String> {
+    let path = fix_sep(path);
+    let path = path.as_str();
     let p = path::Path::new(path);
 
-    let result = ls(p);
+    let result = _tree(p);
 
     match result {
         Ok(n) => {
@@ -35,7 +40,7 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
 
             let root_node = TreeNode {
                 label: "root".to_string(),
-                path: path.to_string(),
+                path: fix_sep(path),
                 children: vec![n],
                 is_dir: true,
             };
@@ -46,7 +51,7 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
 }
 
 /// 递归列举[`path`]文件树
-fn ls(path: &path::Path) -> Result<TreeNode, io::Error> {
+fn _tree(path: &path::Path) -> Result<TreeNode, io::Error> {
     let mut node = TreeNode {
         // file_stem 不带扩展名
         label: path
@@ -64,7 +69,7 @@ fn ls(path: &path::Path) -> Result<TreeNode, io::Error> {
         for entry in fs::read_dir(path)? {
             let entry = entry?;
             let child_path = entry.path();
-            let child_node = ls(&child_path)?;
+            let child_node = _tree(&child_path)?;
             node.children.push(child_node);
         }
     }
@@ -229,13 +234,22 @@ fn create(path: &str) -> Result<fs::File, String> {
     }
 }
 
-/// 设置文件路径
-const SETTING_FILEPATH: &str = "conf/settings.json";
+/// 修正文件分隔符
+fn fix_sep(path: &str) -> String {
+    let path = path.replace("/", path::MAIN_SEPARATOR_STR);
+    path.replace("\\", path::MAIN_SEPARATOR_STR)
+}
 
 #[cfg(test)]
 mod tests {
     use crate::fs;
-    use crate::fs::Setting;
+
+    #[test]
+    fn fix_path_test() {
+        let path = "C:/dev";
+        let path = fs::fix_sep(path);
+        println!("{:?}", path);
+    }
 
     #[test]
     fn tree_test() {
@@ -281,7 +295,7 @@ mod tests {
 
     #[test]
     fn write_setting_test() {
-        let setting = Setting {
+        let setting = fs::Setting {
             root_path: "C:\\dev".to_string(),
         };
 

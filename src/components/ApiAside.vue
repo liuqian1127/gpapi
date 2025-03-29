@@ -3,7 +3,7 @@ import {onMounted, ref} from "vue"
 import {invoke} from "@tauri-apps/api/core"
 import {ElMessage} from "element-plus"
 import {Refresh} from "@element-plus/icons-vue"
-import ApiAsideTree from "@/components/ApiAsideTree.vue";
+import ApiAsideTree from "@/components/ApiAsideTree.vue"
 
 // 根目录
 const rootPath = ref("")
@@ -38,6 +38,7 @@ const handleLoad = () => {
   invoke("tree", args)
       .then(resp => {
         resp.children[0].isRoot = true
+        rootPath.value = resp.path
         treeData.value = resp.children
       })
       .catch(err => ElMessage.error(err))
