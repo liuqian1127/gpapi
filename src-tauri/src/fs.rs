@@ -6,6 +6,7 @@ const SETTING_FILEPATH: &str = "conf/settings.json";
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TreeNode {
+    id: String,
     label: String,
     path: String,
     children: Vec<TreeNode>,
@@ -39,8 +40,9 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
             }
 
             let root_node = TreeNode {
+                id: path.to_string(),
                 label: "root".to_string(),
-                path: fix_sep(path),
+                path: path.to_string(),
                 children: vec![n],
                 is_dir: true,
             };
@@ -53,6 +55,7 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
 /// 递归列举[`path`]文件树
 fn _tree(path: &path::Path) -> Result<TreeNode, io::Error> {
     let mut node = TreeNode {
+        id: path.to_str().unwrap_or_default().to_string(),
         // file_stem 不带扩展名
         label: path
             .file_stem()

@@ -54,6 +54,7 @@ const addDir = () => {
 
   const path = activeNode.value.path + "/新目录"
   const node = {
+    id: Date.now(),
     label: "新目录",
     path,
     children: [],
@@ -66,10 +67,7 @@ const addDir = () => {
         if (resp === "exist") {
           ElMessage.success("目录已存在")
         } else {
-          if (!activeNode.value.children) {
-            activeNode.value.children = []
-          }
-          activeNode.value.children.push(node)
+          tree.value.append(node, activeNode.value)
         }
       })
       .catch(err => ElMessage.error(err))
@@ -81,6 +79,7 @@ const addFile = () => {
 
   const path = activeNode.value.path + "/新文件.json"
   const node = {
+    id: Date.now(),
     label: "新文件",
     path,
     children: [],
@@ -93,10 +92,7 @@ const addFile = () => {
         if (resp === "exist") {
           ElMessage.success("文件已存在")
         } else {
-          if (!activeNode.value.children) {
-            activeNode.value.children = []
-          }
-          activeNode.value.children.push(node)
+          tree.value.append(node, activeNode.value)
         }
       })
       .catch(err => ElMessage.error(err))
@@ -109,14 +105,14 @@ const copy = () => {
   // 文件树复制 path是文件名
   const path = activeNode.value.path
 
-  const sep = path.includes('\\') ? '\\' : '/'
-  const pathParts = path.split(sep)
+  const pathParts = path.split(/[\\/]/)
   const dirPath = pathParts.slice(0, -1).join('/')
   const fileName = pathParts[pathParts.length - 1]
   const label = fileName.replaceAll("\.json", "") + ' Copy'
-  const newPath = dirPath + sep + label + ".json"
+  const newPath = dirPath + '/' + label + ".json"
 
   const node = {
+    id: Date.now(),
     label,
     path: newPath,
     children: [],
@@ -200,7 +196,7 @@ onBeforeUnmount(() => removeEventListener('click', closeMenu))
 </script>
 
 <template>
-  <el-tree ref="tree" :data="treeData" empty-text="无数据" node-key="path" highlight-current @node-click="handleNodeClick" @node-contextmenu="handleContextMenu">
+  <el-tree ref="tree" :data="treeData" empty-text="无数据" node-key="id" highlight-current @node-click="handleNodeClick" @node-contextmenu="handleContextMenu">
     <template #default="{node, data}">
       <el-text :type="data.isDir?'primary':'success'">{{ node.label }}</el-text>
     </template>
