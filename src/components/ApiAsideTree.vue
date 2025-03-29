@@ -2,8 +2,8 @@
 import {useTabStore} from "@/store/tab.js"
 import {storeToRefs} from "pinia"
 import {onBeforeUnmount, onMounted, ref} from "vue"
-import {invoke} from "@tauri-apps/api/core";
-import {ElMessage} from "element-plus";
+import {invoke} from "@tauri-apps/api/core"
+import {ElMessage} from "element-plus"
 
 const {rootPath, treeData} = defineProps(["rootPath", "treeData"])
 const emit = defineEmits(["refresh"])
@@ -102,6 +102,39 @@ const addFile = () => {
       .catch(err => ElMessage.error(err))
 }
 
+// 复制节点
+const copy = () => {
+  closeMenu()
+
+  // 文件树复制 path是文件名
+  const path = activeNode.value.path
+
+  const sep = path.includes('\\') ? '\\' : '/'
+  const pathParts = path.split(sep)
+  const dirPath = pathParts.slice(0, -1).join('/')
+  const fileName = pathParts[pathParts.length - 1]
+  const label = fileName.replaceAll("\.json", "") + ' Copy'
+  const newPath = dirPath + sep + label + ".json"
+
+  const node = {
+    label,
+    path: newPath,
+    children: [],
+    isDir: false
+  }
+
+  // 新建文件
+  invoke("touch", {path: newPath})
+      .then(resp => {
+        if (resp === "exist") {
+          ElMessage.success("文件已存在")
+        } else {
+          tree.value.insertAfter(node, activeNode.value)
+        }
+      })
+      .catch(err => ElMessage.error(err))
+}
+
 // 删除节点
 const remove = () => {
   // 关闭菜单
@@ -177,8 +210,9 @@ onBeforeUnmount(() => removeEventListener('click', closeMenu))
     <el-menu>
       <el-menu-item index="1" v-if="activeNode.isDir" @click="addDir">新增目录</el-menu-item>
       <el-menu-item index="2" v-if="activeNode.isDir" @click="addFile">新增文件</el-menu-item>
-      <el-menu-item index="3" v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" :disabled="activeNode.isRoot" @click="remove">删除</el-menu-item>
-      <el-menu-item index="4" v-if="activeNode.children.length===0" :disabled="activeNode.isRoot" @click="showRenameDialog">重命名</el-menu-item>
+      <el-menu-item index="3" v-if="!activeNode.isDir" @click="copy">复制</el-menu-item>
+      <el-menu-item index="4" v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" :disabled="activeNode.isRoot" @click="remove">删除</el-menu-item>
+      <el-menu-item index="5" v-if="activeNode.children.length===0" :disabled="activeNode.isRoot" @click="showRenameDialog">重命名</el-menu-item>
     </el-menu>
   </div>
 
