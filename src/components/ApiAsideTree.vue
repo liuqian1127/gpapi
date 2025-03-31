@@ -19,7 +19,7 @@ const dialogFormVisible = ref(false)
 
 const tabStore = useTabStore()
 const {activeTab} = storeToRefs(tabStore)
-const {addTab, removeTab, renameTab} = tabStore
+const {addTab, removeTab, renameTab, updateTab} = tabStore
 
 // 点击文件树节点
 const handleNodeClick = data => {
@@ -106,10 +106,10 @@ const copy = () => {
   const path = activeNode.value.path
 
   const pathParts = path.split(/[\\/]/)
-  const dirPath = pathParts.slice(0, -1).join('/')
+  const dirPath = pathParts.slice(0, -1).join("/")
   const fileName = pathParts[pathParts.length - 1]
-  const label = fileName.replaceAll("\.json", "") + ' Copy'
-  const newPath = dirPath + '/' + label + ".json"
+  const label = fileName.replaceAll("\.json", "") + " Copy"
+  const newPath = dirPath + "/" + label + ".json"
 
   const node = {
     id: Date.now(),
@@ -155,7 +155,7 @@ const remove = () => {
 const rename = () => {
   // 非空时中止修改
   const name = newName.value
-  if (name === '') {
+  if (name === "") {
     return
   }
 
@@ -191,12 +191,45 @@ const showRenameDialog = () => {
 }
 
 // 单击空白处关闭菜单
-onMounted(() => addEventListener('click', closeMenu))
-onBeforeUnmount(() => removeEventListener('click', closeMenu))
+onMounted(() => addEventListener("click", closeMenu))
+onBeforeUnmount(() => removeEventListener("click", closeMenu))
+
+// 拖拽节点时变更文件系统
+const handleDrop = (draggingNode, dropNode) => {
+  const label = draggingNode.data.label
+  const fromPath = draggingNode.data.path
+  const toPath = dropNode.data.path + "/" + label + ".json"
+
+  // 文件系统
+  invoke("rename", {from: fromPath, to: toPath})
+      .then(resp => {
+        if (resp === "exist") {
+          ElMessage.error("不能重名")
+        } else {
+          // 更新标签页
+          updateTab(label, toPath)
+          activeTab.value = toPath
+
+          // 更新文件树
+          draggingNode.data.path = toPath
+        }
+      })
+      .catch(err => ElMessage.error(err))
+}
+// 仅目录节点可拖入
+const allowDrop = (draggingNode, dropNode, type) => {
+  return dropNode.data.isDir && type === 'inner'
+}
+// 仅允许拖拽文件节点
+const allowDrag = draggingNode => {
+  return !draggingNode.data.isDir
+}
 </script>
 
 <template>
-  <el-tree ref="tree" :data="treeData" empty-text="无数据" node-key="id" highlight-current @node-click="handleNodeClick" @node-contextmenu="handleContextMenu">
+  <el-tree ref="tree" :data="treeData" empty-text="无数据" node-key="id" highlight-current
+           :draggable="true" :allow-drop="allowDrop" :allow-drag="allowDrag" @node-drop="handleDrop"
+           @node-click="handleNodeClick" @node-contextmenu="handleContextMenu">
     <template #default="{node, data}">
       <el-text :type="data.isDir?'primary':'success'">{{ node.label }}</el-text>
     </template>

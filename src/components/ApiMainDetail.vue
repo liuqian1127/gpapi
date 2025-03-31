@@ -3,7 +3,7 @@ import {onMounted, ref} from "vue"
 import {invoke} from "@tauri-apps/api/core"
 import {ElMessage} from "element-plus"
 
-const {path} = defineProps(['path'])
+const {path} = defineProps(["path"])
 
 const sendLoading = ref(false)
 const saveLoading = ref(false)

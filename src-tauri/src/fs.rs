@@ -63,7 +63,7 @@ fn _tree(path: &path::Path) -> Result<TreeNode, io::Error> {
             .to_str()
             .unwrap_or_default()
             .to_string(),
-        path: path.to_str().unwrap_or_default().to_string(),
+        path: fix_sep(path.to_str().unwrap_or_default()).to_string(),
         children: Vec::new(),
         is_dir: path.is_dir(),
     };
@@ -239,8 +239,7 @@ fn create(path: &str) -> Result<fs::File, String> {
 
 /// 修正文件分隔符
 fn fix_sep(path: &str) -> String {
-    let path = path.replace("/", path::MAIN_SEPARATOR_STR);
-    path.replace("\\", path::MAIN_SEPARATOR_STR)
+    path.replace("\\", "/")
 }
 
 #[cfg(test)]

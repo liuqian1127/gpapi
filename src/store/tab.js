@@ -1,10 +1,10 @@
-import {defineStore} from 'pinia'
+import {defineStore} from "pinia"
 import {ref} from "vue"
 
 // 右侧主界面Tab标签页状态
-export const useTabStore = defineStore('Tab', () => {
+export const useTabStore = defineStore("Tab", () => {
     const tabs = ref([])
-    const activeTab = ref('')
+    const activeTab = ref("")
 
     function addTab(tab) {
         const find = tabs.value.find(obj => obj.name === tab.name)
@@ -42,5 +42,14 @@ export const useTabStore = defineStore('Tab', () => {
         }
     }
 
-    return {tabs, activeTab, addTab, removeTab, renameTab}
+    // 根据标签名修改标签路径（name存放的path）
+    function updateTab(label, name) {
+        console.log(label, name)
+        const found = tabs.value.find(obj => obj.label === label)
+        if (found) {
+            found.name = name
+        }
+    }
+
+    return {tabs, activeTab, addTab, removeTab, renameTab, updateTab}
 })
