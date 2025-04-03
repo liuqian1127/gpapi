@@ -1,7 +1,7 @@
 <script setup>
 import {useTabStore} from "@/store/tab.js"
 import {storeToRefs} from "pinia"
-import {onBeforeUnmount, onMounted, ref} from "vue"
+import {ref, watch} from "vue"
 import {invoke} from "@tauri-apps/api/core"
 import {ElMessage} from "element-plus"
 
@@ -190,9 +190,12 @@ const showRenameDialog = () => {
   dialogFormVisible.value = true
 }
 
-// 单击空白处关闭菜单
-onMounted(() => addEventListener("click", closeMenu))
-onBeforeUnmount(() => removeEventListener("click", closeMenu))
+// 监听全局点击事件关闭菜单
+watch(showMenu, visible => {
+  if (visible) {
+    document.addEventListener('click', () => showMenu.value = false, {once: true})
+  }
+})
 
 // 拖拽节点时变更文件系统
 const handleDrop = (draggingNode, dropNode) => {
@@ -235,15 +238,17 @@ const allowDrag = draggingNode => {
     </template>
   </el-tree>
 
-  <div v-if="showMenu" :style="{top: menuPosition.top + 'px', left: menuPosition.left + 'px'}" class="context-menu">
-    <el-menu>
-      <el-menu-item index="1" v-if="activeNode.isDir" @click="addDir">新增目录</el-menu-item>
-      <el-menu-item index="2" v-if="activeNode.isDir" @click="addFile">新增文件</el-menu-item>
-      <el-menu-item index="3" v-if="!activeNode.isDir" @click="copy">复制</el-menu-item>
-      <el-menu-item index="4" v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" :disabled="activeNode.isRoot" @click="remove">删除</el-menu-item>
-      <el-menu-item index="5" v-if="activeNode.children.length===0" :disabled="activeNode.isRoot" @click="showRenameDialog">重命名</el-menu-item>
-    </el-menu>
-  </div>
+  <teleport to="body">
+    <div v-if="showMenu" class="context-menu" :style="{ left: menuPosition.left + 'px', top: menuPosition.top + 'px' }">
+      <ul>
+        <li v-if="activeNode.isDir" @click="addDir">新增目录</li>
+        <li v-if="activeNode.isDir" @click="addFile">新增文件</li>
+        <li v-if="!activeNode.isDir" @click="copy">复制</li>
+        <li v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" :disabled="activeNode.isRoot" @click="remove">删除</li>
+        <li v-if="activeNode.children.length===0" :disabled="activeNode.isRoot" @click="showRenameDialog">重命名</li>
+      </ul>
+    </div>
+  </teleport>
 
   <el-dialog v-model="dialogFormVisible" title="重命名" width="300">
     <el-input v-model="newName" @keyup.enter="rename"/>
@@ -260,11 +265,25 @@ const allowDrag = draggingNode => {
 <style scoped>
 .context-menu {
   position: fixed;
-  background-color: white;
+  background: #fff;
   border: 1px solid #ebeef5;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   z-index: 9999;
+
+  ul {
+    list-style: none;
+    padding: 5px 0;
+    margin: 0;
+
+    li {
+      padding: 5px 15px;
+      cursor: pointer;
+
+      &:hover {
+        background: #e7e8ea;
+      }
+    }
+  }
 }
 
 .el-menu-item {
