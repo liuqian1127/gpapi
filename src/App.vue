@@ -4,7 +4,7 @@ import ApiMain from "@/components/ApiMain.vue"
 </script>
 
 <template>
-  <el-container @contextmenu.prevent>
+  <el-container>
     <el-aside style="border: 1px solid #cfcfc4">
       <api-aside/>
     </el-aside>
