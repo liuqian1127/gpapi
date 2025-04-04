@@ -12,15 +12,23 @@ const menuPosition = ref()
 const selectedTab = ref()
 const showMenu = ref(false)
 
+// 从事件中获取tabId
+const getTabId = event => {
+  const target = event.target.closest('.el-tabs__item') // 获取当前标签元素
+  if (target) {
+    // 获取标签页唯一标识：tab-{name}，使用截取的方式，剔除“tab-”等4个字符
+    return target.id.substring(4)
+  }
+}
+
 // 右键菜单
 const handleRightClick = event => {
-  const target = event.target.closest('.el-tabs__item') // 获取当前标签元素
-  if (!target) {
+  const tabId = getTabId(event)
+  if (!tabId) {
     return
   }
-
-  // 获取标签页唯一标识：tab-{name}
-  const tabId = target.id.split('-')[1]
+  // 阻止标签页上的默认右键菜单
+  event.preventDefault()
   const currentTab = tabs.value.find(tab => tab.name === tabId)
 
   // 设置菜单位置
@@ -30,13 +38,10 @@ const handleRightClick = event => {
 }
 
 const handleMiddleClick = event => {
-  const target = event.target.closest('.el-tabs__item') // 获取当前标签元素
-  if (!target) {
+  const tabId = getTabId(event)
+  if (!tabId) {
     return
   }
-
-  // 获取标签页唯一标识：tab-{name}
-  const tabId = target.id.split('-')[1]
   removeTab(tabId)
 }
 // 关闭当前标签页
@@ -53,14 +58,14 @@ const closeOtherTabs = currentTab => {
 // 关闭当前标签页左侧所有标签页
 const closeLeftTabs = currentTab => {
   const currentIndex = tabs.value.findIndex(t => t.name === currentTab.name)
-  tabs.value.filter((_, index) => index >= currentIndex)
+  tabs.value.filter((_, index) => index < currentIndex)
       .forEach(tab => removeTab(tab.name))
 }
 
 // 关闭当前标签页右侧所有标签页
 const closeRightTabs = currentTab => {
   const currentIndex = tabs.value.findIndex(t => t.name === currentTab.name)
-  tabs.value.filter((_, index) => index <= currentIndex)
+  tabs.value.filter((_, index) => index > currentIndex)
       .forEach(tab => removeTab(tab.name))
 }
 
@@ -80,7 +85,7 @@ watch(showMenu, visible => {
 <template>
   <div class="main-container">
     <el-tabs v-if="tabs.length>0" v-model="activeTab" closable type="card" @tab-remove="removeTab"
-             @contextmenu.prevent.native="handleRightClick" @mousedown.middle.native="handleMiddleClick">
+             @contextmenu="handleRightClick" @mousedown.middle="handleMiddleClick">
       <el-tab-pane v-for="(item, index) in tabs" :key="item.name" :label="item.label" :name="item.name">
         <api-main-detail :key="index" :path="item.name"/>
       </el-tab-pane>
