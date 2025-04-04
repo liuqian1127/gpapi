@@ -26,6 +26,13 @@ pub fn tree(path: &str) -> Result<TreeNode, String> {
     let path = path.as_str();
     let p = path::Path::new(path);
 
+    if !p.exists() {
+        return Err(format!("{} 目录不存在，请创建", path));
+    }
+    if !p.is_dir() {
+        return Err(format!("{} 不是目录，请更换", path));
+    }
+
     let result = _tree(p);
 
     match result {

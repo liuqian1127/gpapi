@@ -244,8 +244,8 @@ const allowDrag = draggingNode => {
         <li v-if="activeNode.isDir" @click="addDir">新增目录</li>
         <li v-if="activeNode.isDir" @click="addFile">新增文件</li>
         <li v-if="!activeNode.isDir" @click="copy">复制</li>
-        <li v-if="activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir" :disabled="activeNode.isRoot" @click="remove">删除</li>
-        <li v-if="activeNode.children.length===0" :disabled="activeNode.isRoot" @click="showRenameDialog">重命名</li>
+        <li v-if="!activeNode.isRoot && (activeNode.isDir && activeNode.children.length===0 || !activeNode.isDir)" @click="remove">删除</li>
+        <li v-if="!activeNode.isRoot && activeNode.children.length===0" @click="showRenameDialog">重命名</li>
       </ul>
     </div>
   </teleport>

@@ -54,8 +54,8 @@ function save() {
   const args = {method: method.value, url: url.value, header: header.value, input: input.value, output: output.value}
 
   invoke("write", {path, content: JSON.stringify(args)})
-      .then(resp => ElMessage.success(resp))
-      .catch(err => ElMessage.error(err))
+      .then(_ => ElMessage.success("保存成功"))
+      .catch(_ => ElMessage.error("保存失败"))
       .finally(() => saveLoading.value = false)
 }
 </script>
