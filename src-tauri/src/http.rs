@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Read;
+use std::path;
 use std::str::FromStr;
 use tauri_plugin_http::reqwest;
 
@@ -37,17 +40,70 @@ async fn del(url: &str, header: &str) -> Result<String, String> {
 async fn post(url: &str, header: &str, input: &str) -> Result<String, String> {
     let headers = parse_header(header);
     let content_type = match headers.get(reqwest::header::CONTENT_TYPE) {
-        Some(v) => v.to_str().unwrap(),
+        Some(v) => match v.to_str() {
+            Ok(v) => v,
+            Err(e) => return Err(format!("提取Content-Type错误 {e}")),
+        },
         None => return Err("未提供Content-Type".into()),
     };
 
     let client = reqwest::Client::new();
     let response;
-    if content_type.contains("application/x-www-form-urlencoded") {
-        response = client.post(url).form(input).send().await;
-    } else if content_type.contains("application/json") {
-        let json: serde_json::Value = serde_json::from_str(input).unwrap();
+    if content_type.contains("application/json") {
+        let json: serde_json::Value = match serde_json::from_str(input) {
+            Ok(v) => v,
+            Err(e) => return Err(format!("JSON字符串错误 {e}")),
+        };
         response = client.post(url).json(&json).send().await;
+    } else if content_type.contains("application/x-www-form-urlencoded") {
+        response = client.post(url).form(input).send().await;
+    } else if content_type.contains("multipart/form-data") {
+        // 上传文件，此时input的格式为：file=path/to/file.txt
+        let input = input.replace(" ", "").replace("\r", "");
+        let parts: Vec<&str> = input.splitn(2, "=").collect();
+        if parts.len() != 2 {
+            return Err("请求体格式错误，参考：file=/path/to/test.txt".to_string());
+        }
+
+        let file_form = parts[0];
+        let file_path = parts[1];
+        let file_path = path::Path::new(file_path);
+        if !file_path.exists() {
+            return Err(format!("{}不存在", file_path.display()));
+        }
+        if !file_path.is_file() {
+            return Err(format!("{}不是文件", file_path.display()));
+        }
+
+        // 打开文件
+        let result = File::open(file_path);
+        let mut file = match result {
+            Ok(f) => f,
+            Err(e) => {
+                return Err(format!("打开{}文件失败 {}", file_path.display(), e));
+            }
+        };
+        let mut file_content = Vec::new();
+        let result = file.read_to_end(&mut file_content);
+        match result {
+            Ok(s) => {
+                if s == 0 {
+                    return Err(format!("{}内容为空", file_path.display()));
+                }
+            }
+            Err(e) => {
+                return Err(format!("{}读取失败 {}", file_path.display(), e));
+            }
+        }
+
+        // 创建 multipart 表单
+        let file_name = file_path.file_name().unwrap().to_str().unwrap();
+        let file_name = file_name.to_string().clone(); // 避免生命周期问题
+        let part = reqwest::multipart::Part::bytes(file_content).file_name(file_name);
+        let file_form = file_form.to_string().clone(); // 避免生命周期问题
+        let form = reqwest::multipart::Form::new().part(file_form, part);
+
+        response = client.post(url).multipart(form).send().await;
     } else {
         response = client.post(url).body(input.to_string()).send().await;
     }
@@ -58,7 +114,10 @@ async fn post(url: &str, header: &str, input: &str) -> Result<String, String> {
 async fn put(url: &str, header: &str, input: &str) -> Result<String, String> {
     let headers = parse_header(header);
     let content_type = match headers.get(reqwest::header::CONTENT_TYPE) {
-        Some(v) => v.to_str().unwrap(),
+        Some(v) => match v.to_str() {
+            Ok(v) => v,
+            Err(e) => return Err(format!("提取Content-Type错误 {e}")),
+        },
         None => return Err("未提供Content-Type".into()),
     };
 
@@ -67,7 +126,10 @@ async fn put(url: &str, header: &str, input: &str) -> Result<String, String> {
     if content_type.contains("application/x-www-form-urlencoded") {
         response = client.put(url).form(input).send().await;
     } else if content_type.contains("application/json") {
-        let json: serde_json::Value = serde_json::from_str(input).unwrap();
+        let json: serde_json::Value = match serde_json::from_str(input) {
+            Ok(v) => v,
+            Err(e) => return Err(format!("JSON字符串错误 {e}")),
+        };
         response = client.put(url).json(&json).send().await;
     } else {
         response = client.put(url).body(input.to_string()).send().await;
@@ -79,7 +141,10 @@ async fn put(url: &str, header: &str, input: &str) -> Result<String, String> {
 async fn patch(url: &str, header: &str, input: &str) -> Result<String, String> {
     let headers = parse_header(header);
     let content_type = match headers.get(reqwest::header::CONTENT_TYPE) {
-        Some(v) => v.to_str().unwrap(),
+        Some(v) => match v.to_str() {
+            Ok(v) => v,
+            Err(e) => return Err(format!("提取Content-Type错误 {e}")),
+        },
         None => return Err("未提供Content-Type".into()),
     };
 
@@ -88,7 +153,10 @@ async fn patch(url: &str, header: &str, input: &str) -> Result<String, String> {
     if content_type.contains("application/x-www-form-urlencoded") {
         response = client.patch(url).form(input).send().await;
     } else if content_type.contains("application/json") {
-        let json: serde_json::Value = serde_json::from_str(input).unwrap();
+        let json: serde_json::Value = match serde_json::from_str(input) {
+            Ok(v) => v,
+            Err(e) => return Err(format!("JSON字符串错误 {e}")),
+        };
         response = client.patch(url).json(&json).send().await;
     } else {
         response = client.patch(url).body(input.to_string()).send().await;
