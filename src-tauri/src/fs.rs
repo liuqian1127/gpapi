@@ -226,6 +226,21 @@ pub fn touch(path: &str) -> Result<String, String> {
 }
 
 /// 创建[`path`]文件
+#[tauri::command]
+pub fn copy(from: &str, to: &str) -> Result<String, String> {
+    let p = path::Path::new(to);
+    if p.exists() {
+        Ok("exist".to_string())
+    } else {
+        let result = fs::copy(from, to);
+        match result {
+            Ok(_) => Ok("文件复制成功".to_string()),
+            Err(e) => Err(format!("文件复制失败 {e}")),
+        }
+    }
+}
+
+/// 创建[`path`]文件
 fn create(path: &str) -> Result<fs::File, String> {
     // 确保父目录存在
     let p = path::Path::new(path);

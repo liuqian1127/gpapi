@@ -120,7 +120,7 @@ const copy = () => {
   }
 
   // 新建文件
-  invoke("touch", {path: newPath})
+  invoke("copy", {from: path, to: newPath})
       .then(resp => {
         if (resp === "exist") {
           ElMessage.success("文件已存在")

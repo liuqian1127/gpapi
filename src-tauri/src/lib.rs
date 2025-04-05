@@ -1,7 +1,7 @@
 mod fs;
 mod http;
 
-use fs::{mkdir, read, read_setting, remove, rename, touch, tree, write};
+use fs::{copy, mkdir, read, read_setting, remove, rename, touch, tree, write};
 use http::do_request;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,7 +19,8 @@ pub fn run() {
             remove,
             rename,
             mkdir,
-            touch
+            touch,
+            copy
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
