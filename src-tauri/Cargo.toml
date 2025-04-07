@@ -1,6 +1,6 @@
 [package]
 name = "gpapi"
-version = "0.1.1"
+version = "0.1.2"
 description = "接口工具"
 authors = ["liuqian"]
 edition = "2021"
