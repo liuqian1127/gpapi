@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::Read;
+use std::fs;
 use std::path;
 use std::str::FromStr;
 use std::time::Duration;
@@ -149,26 +148,14 @@ async fn post_multipart(builder: reqwest::RequestBuilder, input: &str) -> Result
         return Err(format!("{}不是文件", file_path.display()));
     }
 
-    // 打开文件
-    let result = File::open(file_path);
-    let mut file = match result {
-        Ok(f) => f,
-        Err(e) => {
-            return Err(format!("打开{}文件失败 {}", file_path.display(), e));
-        }
-    };
-    let mut file_content = Vec::new();
-    let result = file.read_to_end(&mut file_content);
-    match result {
-        Ok(s) => {
-            if s == 0 {
-                return Err(format!("{}内容为空", file_path.display()));
-            }
-        }
+    // 读取文件内容
+    let result = fs::read(file_path);
+    let file_content = match result {
+        Ok(c) => c,
         Err(e) => {
             return Err(format!("{}读取失败 {}", file_path.display(), e));
         }
-    }
+    };
 
     // 创建 multipart 表单
     let file_name = file_path.file_name().unwrap().to_str().unwrap();
