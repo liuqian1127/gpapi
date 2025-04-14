@@ -53,7 +53,7 @@ async fn del(url: &str, header: &str) -> Result<String, String> {
 async fn post(url: &str, header: &str, input: &str, opt: &str) -> Result<String, String> {
     let client = reqwest::Client::new();
 
-    let mut builder;
+    let builder;
     if opt == "POST" {
         builder = client.post(url);
     } else if opt == "PUT" {
@@ -64,7 +64,11 @@ async fn post(url: &str, header: &str, input: &str, opt: &str) -> Result<String,
         return Err(format!("暂不支持{opt}请求"));
     }
 
-    let headers = parse_header(header);
+    // 设置超时时间
+    let builder = builder.timeout(TIMEOUT);
+
+    // 解析请求头
+    let mut headers = parse_header(header);
     let content_type = match headers.get(reqwest::header::CONTENT_TYPE) {
         Some(v) => match v.to_str() {
             Ok(v) => v,
@@ -72,15 +76,26 @@ async fn post(url: &str, header: &str, input: &str, opt: &str) -> Result<String,
         },
         None => return Err("未提供Content-Type".into()),
     };
-    builder = builder.headers(headers.clone()).timeout(TIMEOUT);
 
+    // 根据content-type负载请求体
     if content_type.contains("application/json") {
+        let builder = builder.headers(headers);
+
         post_json(builder, input).await
     } else if content_type.contains("application/x-www-form-urlencoded") {
+        let builder = builder.headers(headers);
+
         post_form(builder, input).await
     } else if content_type.contains("multipart/form-data") {
+        // 文件上传时会自定义content-type头
+        headers.remove(reqwest::header::CONTENT_TYPE);
+
+        let builder = builder.headers(headers);
+
         post_multipart(builder, input).await
     } else {
+        let builder = builder.headers(headers);
+
         post_body(builder, input).await
     }
 }
