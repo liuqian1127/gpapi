@@ -78,6 +78,10 @@ fn _tree(path: &path::Path) -> Result<TreeNode, io::Error> {
     if path.is_dir() {
         for entry in fs::read_dir(path)? {
             let entry = entry?;
+            if is_hidden(&entry) {
+                continue;
+            }
+
             let child_path = entry.path();
             let child_node = _tree(&child_path)?;
             node.children.push(child_node);
@@ -85,6 +89,14 @@ fn _tree(path: &path::Path) -> Result<TreeNode, io::Error> {
     }
 
     Ok(node)
+}
+
+/// 判断文件是否为隐藏文件或目录
+fn is_hidden(entry: &fs::DirEntry) -> bool {
+    entry.file_name()
+         .to_str()
+         .map(|s| s.starts_with('.'))
+         .unwrap_or(false)
 }
 
 /// 读取配置
