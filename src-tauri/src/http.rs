@@ -15,8 +15,8 @@ pub async fn do_request(
     input: &str,
 ) -> Result<String, String> {
     match method {
-        "GET" => get(url, header).await,
-        "DELETE" => del(url, header).await,
+        "GET" => get(url, header, input, "GET").await,
+        "DELETE" => get(url, header, input, "DELETE").await,
         "POST" => post(url, header, input, "POST").await,
         "PUT" => post(url, header, input, "PUT").await,
         "PATCH" => post(url, header, input, "PATCH").await,
@@ -24,27 +24,31 @@ pub async fn do_request(
     }
 }
 
-/// 执行GET请求
-async fn get(url: &str, header: &str) -> Result<String, String> {
+/// 执行类GET操作，如GET、DELETE
+async fn get(url: &str, header: &str, input: &str, opt: &str) -> Result<String, String> {
     let client = reqwest::Client::new();
-    let response = client
-        .get(url)
-        .headers(parse_header(header))
-        .timeout(TIMEOUT)
-        .send()
-        .await;
-    parse_response(response).await
-}
 
-/// 执行DELETE请求
-async fn del(url: &str, header: &str) -> Result<String, String> {
-    let client = reqwest::Client::new();
-    let response = client
-        .delete(url)
+    let mut builder;
+    if opt == "GET" {
+        builder = client.get(url);
+    } else if opt == "DELETE" {
+        builder = client.delete(url);
+    } else {
+        return Err(format!("暂不支持{opt}请求"));
+    }
+
+    // 有请求头
+    if !input.is_empty() {
+        let params = parse_param(input);
+        builder = builder.query(&params);
+    }
+
+    let response = builder
         .headers(parse_header(header))
         .timeout(TIMEOUT)
         .send()
         .await;
+
     parse_response(response).await
 }
 
@@ -215,6 +219,17 @@ fn parse_header(header: &str) -> reqwest::header::HeaderMap {
     map
 }
 
+/// 解析请求体，将 foo=a&foo=b 转为 [("foo", "a"), ("foo", "b")]
+fn parse_param(input: &str) -> Vec<(&str, &str)> {
+    input
+        .split('&')
+        .map(|pair| {
+            let mut kv = pair.split('=');
+            (kv.next().unwrap(), kv.next().unwrap())
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::http;
@@ -238,7 +253,7 @@ mod tests {
     async fn get_test() {
         let url = "https://tauri.app";
         let header = "Content-Type: application/json;charset=UTF-8\nAccept: application/json, text/plain, */*\n";
-        let resp = http::get(url, header).await;
+        let resp = http::get(url, header, "", "GET").await;
         match resp {
             Ok(output) => {
                 println!("{output}");
@@ -247,5 +262,12 @@ mod tests {
                 println!("{err}");
             }
         }
+    }
+
+    #[test]
+    fn parse_param_test() {
+        let input = "name=John&age=30";
+        let params = http::parse_param(input);
+        println!("{:?}", params);
     }
 }
