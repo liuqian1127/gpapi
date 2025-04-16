@@ -125,7 +125,8 @@ async fn post_form(builder: reqwest::RequestBuilder, input: &str) -> Result<Stri
     if input.is_empty() {
         return Err("请全体不能为空".to_string());
     }
-    let response = builder.form(input).send().await;
+    let params = parse_param(input);
+    let response = builder.form(&params).send().await;
 
     parse_response(response).await
 }
